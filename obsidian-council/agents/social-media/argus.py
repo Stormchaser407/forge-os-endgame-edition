@@ -667,7 +667,7 @@ class ARGUSAgent(ObsidianAgent):
             
             # Generate filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+            url_hash = hashlib.sha256(url.encode()).hexdigest()[:8]
             filename = f"{case_id}_{timestamp}_{url_hash}.png"
             filepath = f"{self.screenshot_dir}/{filename}"
             

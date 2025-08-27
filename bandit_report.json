@@ -1,0 +1,106 @@
+{
+  "errors": [],
+  "generated_at": "2025-08-27T19:51:37Z",
+  "metrics": {
+    "./obsidian-council/agents/agent_registry.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 210,
+      "nosec": 0
+    },
+    "./obsidian-council/agents/geolocation/atlas.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 678,
+      "nosec": 0
+    },
+    "./obsidian-council/agents/identity/oracle.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 453,
+      "nosec": 0
+    },
+    "./obsidian-council/agents/social-media/argus.py": {
+      "CONFIDENCE.HIGH": 1.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 1.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 533,
+      "nosec": 0
+    },
+    "./obsidian-council/core/agent_base.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 382,
+      "nosec": 0
+    },
+    "./obsidian-council/core/ai_service_manager.py": {
+      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 0.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 472,
+      "nosec": 0
+    },
+    "_totals": {
+      "CONFIDENCE.HIGH": 1.0,
+      "CONFIDENCE.LOW": 0.0,
+      "CONFIDENCE.MEDIUM": 0.0,
+      "CONFIDENCE.UNDEFINED": 0.0,
+      "SEVERITY.HIGH": 0.0,
+      "SEVERITY.LOW": 0.0,
+      "SEVERITY.MEDIUM": 1.0,
+      "SEVERITY.UNDEFINED": 0.0,
+      "loc": 2728,
+      "nosec": 0
+    }
+  },
+  "results": [
+    {
+      "code": "669             timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n670             url_hash = hashlib.md5(url.encode()).hexdigest()[:8]\n671             filename = f\"{case_id}_{timestamp}_{url_hash}.png\"\n",
+      "filename": "./obsidian-council/agents/social-media/argus.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Use of insecure MD2, MD4, MD5, or SHA1 hash function.",
+      "line_number": 670,
+      "line_range": [
+        670
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b303-md5",
+      "test_id": "B303",
+      "test_name": "blacklist"
+    }
+  ]
+}
