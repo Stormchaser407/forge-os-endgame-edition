@@ -58,6 +58,12 @@ config/secrets/
 .env
 .env.local
 
+# Security audit reports
+audit_reports/
+*-report.json
+*-audit.json
+*.audit.txt
+
 # Evidence and Case Data (NEVER commit actual case data)
 evidence/
 cases/

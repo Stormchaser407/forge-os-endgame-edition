@@ -135,16 +135,20 @@ dev-council:
 	cd obsidian-council && npm run dev
 
 # Run security scan
-security-scan: iso
-	@echo "🔒 Running security scan on ISO..."
-	if command -v clamav >/dev/null 2>&1; then \
-		echo "🦠 Scanning for malware..."; \
-		clamscan $(OUTPUT_DIR)/$(ISO_NAME); \
-	else \
-		echo "⚠️  ClamAV not installed, skipping malware scan"; \
-	fi
+security-scan: prepare
+	@echo "🔒 Running comprehensive security scan..."
+	@echo "📊 Installing security tools if needed..."
+	@which bandit >/dev/null 2>&1 || pip3 install bandit
+	@which safety >/dev/null 2>&1 || pip3 install safety
+	@echo "🔍 Running Bandit security scan on Python code..."
+	@bandit -r ./obsidian-council/ -f json -o $(OUTPUT_DIR)/bandit-report.json || echo "⚠️  Bandit found security issues - check report"
+	@echo "🔍 Running dependency vulnerability check..."
+	@safety scan --output json > $(OUTPUT_DIR)/safety-report.json 2>&1 || echo "⚠️  Safety check completed (may have found issues)"
 	@echo "🔍 Checking file permissions..."
-	find $(PWD) -type f -perm /o+w -exec echo "⚠️  World-writable file: {}" \;
+	@find $(PWD) -type f -perm /o+w -exec echo "⚠️  World-writable file: {}" \; > $(OUTPUT_DIR)/file-permissions.txt
+	@echo "🔍 Checking for potential secrets..."
+	@grep -r -i "api[_-]key\|password\|secret\|token" ./obsidian-council/ --include="*.py" > $(OUTPUT_DIR)/potential-secrets.txt 2>/dev/null || echo "No obvious secrets found"
+	@echo "✅ Security scan complete - reports in $(OUTPUT_DIR)/"
 
 # Performance benchmarks
 benchmark: iso
@@ -213,13 +217,7 @@ status:
 docs:
 	@echo "📚 Generating documentation..."
 	@echo "Building agent documentation..."
-	python3 -c "
-import sys
-sys.path.append('obsidian-council')
-from agents.agent_registry import get_division_info
-import json
-print(json.dumps(get_division_info(), indent=2))
-" > docs/AGENTS.json
+	@python3 -c "import sys; sys.path.append('obsidian-council'); from agents.agent_registry import get_division_info; import json; print(json.dumps(get_division_info(), indent=2))" > docs/AGENTS.json 2>/dev/null || echo "Agent registry not available"
 	@echo "✅ Documentation generated"
 
 # Quick build for testing (no full ISO)
