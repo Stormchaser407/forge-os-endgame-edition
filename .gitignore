@@ -77,4 +77,4 @@ logs/
 # Database files
 *.db
 *.sqlite
-*.sqlite3
+*.sqlite3docs/AGENTS.json
