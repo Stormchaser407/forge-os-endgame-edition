@@ -1,0 +1,80 @@
+# Forge OS Build Artifacts
+build/chroot/
+build/iso/
+output/*.iso
+output/*.sha256
+output/*.md5
+output/*.sig
+output/*.tar.gz
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+.cache/
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Security - API Keys and Secrets
+*.key
+*.pem
+*.p12
+config/secrets/
+.env
+.env.local
+
+# Evidence and Case Data (NEVER commit actual case data)
+evidence/
+cases/
+investigations/
+*.evidence
+
+# Large binary files
+*.img
+*.vmdk
+*.vdi
+*.qcow2
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
