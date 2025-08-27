@@ -98,6 +98,7 @@ deploy-usb: iso checksums
 # Generate checksums
 checksums: iso
 	@echo "🔐 Generating checksums..."
+	mkdir -p $(OUTPUT_DIR)
 	cd $(OUTPUT_DIR) && sha256sum $(ISO_NAME) > $(ISO_NAME).sha256
 	cd $(OUTPUT_DIR) && md5sum $(ISO_NAME) > $(ISO_NAME).md5
 	@echo "✅ Checksums generated"
@@ -105,12 +106,14 @@ checksums: iso
 # Sign ISO with GPG
 sign: iso
 	@echo "✍️  Signing ISO with GPG..."
+	mkdir -p $(OUTPUT_DIR)
 	gpg --armor --detach-sign $(OUTPUT_DIR)/$(ISO_NAME)
 	@echo "✅ ISO signed"
 
 # Create distribution package
 package: iso checksums sign
 	@echo "📦 Creating distribution package..."
+	mkdir -p $(OUTPUT_DIR)
 	mkdir -p $(OUTPUT_DIR)/forge-os-endgame-$(VERSION)
 	cp $(OUTPUT_DIR)/$(ISO_NAME)* $(OUTPUT_DIR)/forge-os-endgame-$(VERSION)/
 	cp README.md $(OUTPUT_DIR)/forge-os-endgame-$(VERSION)/
@@ -213,13 +216,13 @@ status:
 docs:
 	@echo "📚 Generating documentation..."
 	@echo "Building agent documentation..."
-	python3 -c "
-import sys
-sys.path.append('obsidian-council')
-from agents.agent_registry import get_division_info
-import json
-print(json.dumps(get_division_info(), indent=2))
-" > docs/AGENTS.json
+	mkdir -p docs
+	python3 -c "\
+import sys; \
+sys.path.append('obsidian-council'); \
+from agents.agent_registry import get_division_info; \
+import json; \
+print(json.dumps(get_division_info(), indent=2))" > docs/AGENTS.json
 	@echo "✅ Documentation generated"
 
 # Quick build for testing (no full ISO)
