@@ -1,0 +1,23 @@
+# ForgeOS authoritative package list (adjust as needed)
+# Desktop essentials
+xfce4
+lightdm
+network-manager
+pulseaudio
+
+# security & utils
+openssh-server
+ufw
+cryptsetup
+lvm2
+
+# dev & tooling
+build-essential
+git
+python3
+python3-pip
+curl
+wget
+jq
+
+# Note: larger Python-based OSINT tools are installed in hooks (pip)

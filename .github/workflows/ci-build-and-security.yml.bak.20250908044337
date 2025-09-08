@@ -1,0 +1,52 @@
+name: CI - security + build (light)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    outputs:
+      security_pass: ${{ steps.check.outputs.passed || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Python deps
+        run: |
+          python3 -m pip install --user bandit safety || true
+      - name: Run bandit
+        run: |
+          python3 -m pip show bandit >/dev/null 2>&1 && bandit -r . -f json -o bandit_report.json || true
+      - name: Run safety
+        run: |
+          if [ -f requirements.txt ]; then python3 -m pip install --user -r requirements.txt || true; fi
+          python3 -m pip show safety >/dev/null 2>&1 && safety check --json > safety_report.json || true
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit_report.json
+            safety_report.json
+
+  build:
+    needs: security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup apt deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build debootstrap qemu-user-static xz-utils || true
+      - name: Run build.sh
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: forgeos-iso
+          path: forgeos-custom.iso
