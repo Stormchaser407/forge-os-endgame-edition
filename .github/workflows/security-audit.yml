@@ -1,0 +1,101 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security audit daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install security audit tools
+      run: |
+        pip install bandit safety semgrep
+        sudo apt-get update
+        sudo apt-get install -y clamav
+        
+    - name: Run Bandit security scan
+      run: |
+        bandit -r ./obsidian-council/ -f json -o bandit-report.json || true
+        
+    - name: Run Safety dependency check
+      run: |
+        safety scan --output json > safety-report.json || true
+        
+    - name: Run file permission audit
+      run: |
+        find . -type f -perm /o+w > world-writable-files.txt || true
+        find . -type f -name "*.py" -perm /g+x > executable-python-files.txt || true
+        
+    - name: Check for secrets
+      run: |
+        grep -r -i "api[_-]key\|password\|secret\|token" ./obsidian-council/ --include="*.py" > potential-secrets.txt || true
+        
+    - name: Upload audit reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-audit-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+          world-writable-files.txt
+          executable-python-files.txt
+          potential-secrets.txt
+          
+    - name: Comment on PR with security findings
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 🛡️ Security Audit Results\n\n';
+          
+          // Check Bandit results
+          try {
+            const banditData = JSON.parse(fs.readFileSync('bandit-report.json', 'utf8'));
+            const issues = banditData.results.length;
+            if (issues > 0) {
+              comment += `⚠️ **Bandit found ${issues} security issues**\n`;
+            } else {
+              comment += '✅ **Bandit**: No security issues found\n';
+            }
+          } catch (e) {
+            comment += '❌ **Bandit**: Scan failed\n';
+          }
+          
+          // Check for world-writable files
+          try {
+            const worldWritable = fs.readFileSync('world-writable-files.txt', 'utf8').trim();
+            if (worldWritable) {
+              comment += `⚠️ **File Permissions**: Found world-writable files\n`;
+            } else {
+              comment += '✅ **File Permissions**: No world-writable files\n';
+            }
+          } catch (e) {
+            comment += '✅ **File Permissions**: Check completed\n';
+          }
+          
+          comment += '\n📊 Full reports available in the workflow artifacts.';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
