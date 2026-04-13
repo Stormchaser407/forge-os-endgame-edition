@@ -22,11 +22,6 @@ import aiohttp
 import tweepy
 import instaloader
 import praw
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 from ..core.agent_base import ObsidianAgent, Priority
 from ..core.ai_service_manager import QueryType, QueryContext, AGENT_PROMPTS
@@ -80,7 +75,7 @@ class ARGUSAgent(ObsidianAgent):
             specialization="Social Media Reconnaissance",
             tools=[
                 "tweepy", "instaloader", "facebook-scraper", "tiktok-scraper",
-                "selenium", "scrapy", "social-analyzer", "sherlock",
+                "scrapy", "social-analyzer", "sherlock",
                 "linkedin-api", "reddit-praw", "discord-py", "telegram-scraper"
             ],
             ai_backends=["claude", "chatgpt", "local"]
@@ -90,7 +85,6 @@ class ARGUSAgent(ObsidianAgent):
         self.twitter_client = None
         self.instagram_client = None
         self.reddit_client = None
-        self.selenium_driver = None
         
         # Monitoring configuration
         self.monitored_keywords: Set[str] = set()
@@ -144,16 +138,6 @@ class ARGUSAgent(ObsidianAgent):
                 client_secret=config["reddit_client_secret"],
                 user_agent="ARGUS-Social-Monitor/1.0"
             )
-        
-        # Selenium for dynamic content
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        
-        self.selenium_driver = webdriver.Chrome(options=chrome_options)
         
         self.logger.info("Social media platform clients initialized")
     
@@ -659,34 +643,9 @@ class ARGUSAgent(ObsidianAgent):
         # Implementation would use Reddit's API for mention tracking
         pass
     
-    async def take_evidence_screenshot(self, url: str, case_id: str) -> str:
-        """Take screenshot of social media content for evidence"""
-        try:
-            self.selenium_driver.get(url)
-            await asyncio.sleep(3)  # Wait for page load
-            
-            # Generate filename
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            url_hash = hashlib.sha256(url.encode()).hexdigest()[:8]
-            filename = f"{case_id}_{timestamp}_{url_hash}.png"
-            filepath = f"{self.screenshot_dir}/{filename}"
-            
-            # Take screenshot
-            self.selenium_driver.save_screenshot(filepath)
-            
-            self.logger.info(f"Evidence screenshot saved: {filepath}")
-            return filepath
-            
-        except Exception as e:
-            self.logger.error(f"Screenshot error: {e}")
-            raise
-    
     async def shutdown(self):
         """Shutdown ARGUS agent"""
         self.logger.info("Shutting down ARGUS agent...")
-        
-        if self.selenium_driver:
-            self.selenium_driver.quit()
         
         await super().shutdown()
 
