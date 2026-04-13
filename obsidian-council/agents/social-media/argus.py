@@ -113,6 +113,8 @@ class ARGUSAgent(ObsidianAgent):
         # Pre-compile regex patterns for performance
         self._trafficking_regexes = [re.compile(p, re.IGNORECASE) for p in self.trafficking_indicators]
         self._distress_regexes = [re.compile(p, re.IGNORECASE) for p in self.distress_patterns]
+        self._hashtag_regex = re.compile(r'#\w+')
+        self._mention_regex = re.compile(r'@\w+')
 
         # Evidence collection
         self.screenshot_dir = "/tmp/argus-screenshots"
@@ -322,8 +324,8 @@ class ARGUSAgent(ObsidianAgent):
                             },
                             location=tweet.geo.get("coordinates") if tweet.geo else None,
                             media_urls=[],
-                            hashtags=re.findall(r'#\w+', tweet.text),
-                            mentions=re.findall(r'@\w+', tweet.text),
+                            hashtags=self._hashtag_regex.findall(tweet.text),
+                            mentions=self._mention_regex.findall(tweet.text),
                             metadata={"search_term": term}
                         )
                         results["posts"].append(post.__dict__)
