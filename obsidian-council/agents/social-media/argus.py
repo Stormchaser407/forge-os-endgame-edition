@@ -451,9 +451,11 @@ class ARGUSAgent(ObsidianAgent):
         """Analyze platform results for potential matches"""
         matches = []
         
+        # Precompute lowercase strings to avoid redundant operations in the loop
         subject_name = subject_info.get("name", "").lower()
         subject_usernames = [u.lower() for u in subject_info.get("usernames", [])]
         subject_aliases = [a.lower() for a in subject_info.get("aliases", [])]
+        subject_locations = [loc.lower() for loc in subject_info.get("locations", [])]
         
         # Check user profiles
         for user in platform_results.get("users", []):
@@ -484,10 +486,11 @@ class ARGUSAgent(ObsidianAgent):
             # Location matching
             user_location = user.get("location", "").lower()
             if user_location:
-                for subject_location in subject_info.get("locations", []):
-                    if subject_location.lower() in user_location:
+                for idx, subject_location_lower in enumerate(subject_locations):
+                    if subject_location_lower in user_location:
                         match_score += 20
-                        match_reasons.append(f"Location match: {subject_location}")
+                        original_location = subject_info.get("locations", [])[idx]
+                        match_reasons.append(f"Location match: {original_location}")
             
             if match_score >= 30:  # Threshold for potential match
                 matches.append({
