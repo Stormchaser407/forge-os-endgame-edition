@@ -1,0 +1,3 @@
+## 2024-05-24 - Precomputing Invariant Strings inside Loops and Classes
+**Learning:** Found O(N*M) redundant string operations in list loops where `.lower()` was called inside a tight nested loop rather than precomputed. Also, in agent base classes, property transformations like `self.codename.lower()` were evaluated repeatedly in heartbeat loops instead of caching the result in `__init__`.
+**Action:** When iterating over lists or evaluating class properties in hot loops, always hoist static `.lower()` transformations and object properties out of the loop and precompute them in `__init__` or before the loop to reduce redundant string allocation overhead.
