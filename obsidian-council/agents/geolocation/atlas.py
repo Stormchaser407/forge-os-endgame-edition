@@ -14,6 +14,7 @@ Specializes in:
 import asyncio
 import json
 import math
+import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
@@ -85,6 +86,13 @@ class ATLASAgent(ObsidianAgent):
         # Movement analysis parameters
         self.min_movement_threshold = 50  # meters
         self.stop_duration_threshold = 300  # seconds (5 minutes)
+
+        # Pre-compile location extraction patterns for performance
+        self._compiled_location_patterns = [
+            re.compile(r'\b(?:at|in|near|from|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', re.IGNORECASE),
+            re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z]{2})\b', re.IGNORECASE),  # City, State
+            re.compile(r'\b(\d+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:St|Ave|Rd|Blvd))\b', re.IGNORECASE)  # Street addresses
+        ]
         self.cluster_radius = 0.001  # degrees (~100m)
         
         # Location database
@@ -437,18 +445,9 @@ class ATLASAgent(ObsidianAgent):
         # This would use NLP libraries like spaCy for named entity recognition
         # Placeholder implementation with basic patterns
         
-        import re
-        
-        # Simple patterns for locations
-        location_patterns = [
-            r'\b(?:at|in|near|from|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
-            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z]{2})\b',  # City, State
-            r'\b(\d+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:St|Ave|Rd|Blvd))\b'  # Street addresses
-        ]
-        
         mentions = []
-        for pattern in location_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
+        for pattern in self._compiled_location_patterns:
+            matches = pattern.findall(text)
             mentions.extend([match if isinstance(match, str) else ' '.join(match) for match in matches])
         
         return list(set(mentions))[:5]  # Limit and deduplicate
