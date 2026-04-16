@@ -79,6 +79,7 @@ class ObsidianAgent(ABC):
     ):
         self.name = name
         self.codename = codename
+        self.codename_lower = codename.lower()  # Cache lowercase codename to prevent redundant string allocations
         self.specialization = specialization
         self.tools = tools or []
         self.ai_backends = ai_backends or ["claude", "local"]
@@ -106,7 +107,7 @@ class ObsidianAgent(ABC):
         
     def _setup_logging(self) -> logging.Logger:
         """Setup agent-specific logging"""
-        logger = logging.getLogger(f"obsidian.{self.codename.lower()}")
+        logger = logging.getLogger(f"obsidian.{self.codename_lower}")
         logger.setLevel(logging.INFO)
         
         handler = logging.StreamHandler()
@@ -156,7 +157,7 @@ class ObsidianAgent(ABC):
             try:
                 # Update status in Redis
                 await self.redis_client.hset(
-                    f"agent:{self.codename.lower()}",
+                    f"agent:{self.codename_lower}",
                     mapping={
                         "status": self.status.value,
                         "last_heartbeat": datetime.now().isoformat(),
@@ -408,7 +409,7 @@ class ObsidianAgent(ABC):
         
         await self.redis_client.hset(
             f"session:{session_id}",
-            f"agent:{self.codename.lower()}",
+            f"agent:{self.codename_lower}",
             json.dumps(session_data)
         )
     
@@ -416,7 +417,7 @@ class ObsidianAgent(ABC):
         """Load previous session state"""
         session_data = await self.redis_client.hget(
             f"session:{session_id}",
-            f"agent:{self.codename.lower()}"
+            f"agent:{self.codename_lower}"
         )
         
         if session_data:
