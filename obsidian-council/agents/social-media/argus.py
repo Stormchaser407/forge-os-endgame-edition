@@ -24,7 +24,7 @@ import instaloader
 import praw
 
 from ..core.agent_base import ObsidianAgent, Priority
-from ..core.ai_service_manager import QueryType, QueryContext, AGENT_PROMPTS
+from ..core.ai_service_manager import QueryType, QueryContext, AGENT_PROMPTS, AIServiceManager
 
 @dataclass
 class SocialMediaProfile:
@@ -454,6 +454,7 @@ class ARGUSAgent(ObsidianAgent):
         subject_name = subject_info.get("name", "").lower()
         subject_usernames = [u.lower() for u in subject_info.get("usernames", [])]
         subject_aliases = [a.lower() for a in subject_info.get("aliases", [])]
+        subject_locations = [(l, l.lower()) for l in subject_info.get("locations", [])]
         
         # Check user profiles
         for user in platform_results.get("users", []):
@@ -484,10 +485,10 @@ class ARGUSAgent(ObsidianAgent):
             # Location matching
             user_location = user.get("location", "").lower()
             if user_location:
-                for subject_location in subject_info.get("locations", []):
-                    if subject_location.lower() in user_location:
+                for orig_location, lower_location in subject_locations:
+                    if lower_location in user_location:
                         match_score += 20
-                        match_reasons.append(f"Location match: {subject_location}")
+                        match_reasons.append(f"Location match: {orig_location}")
             
             if match_score >= 30:  # Threshold for potential match
                 matches.append({
@@ -538,7 +539,6 @@ class ARGUSAgent(ObsidianAgent):
     
     async def _ai_analyze_findings(self, results: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Use AI to analyze findings and provide insights"""
-        from ..core.ai_service_manager import AIServiceManager
         
         # Prepare data for AI analysis
         analysis_prompt = f"""
