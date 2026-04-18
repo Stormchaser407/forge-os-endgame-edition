@@ -1,0 +1,4 @@
+## 2026-04-18 - [Insecure Temporary Directories and Missing Network Timeouts]
+**Vulnerability:** Found hardcoded `/tmp/` directory usage in `atlas.py` and `argus.py` (`[B108:hardcoded_tmp_directory]`), which can lead to insecure temporary file generation. Also found a missing network timeout in `requests.get()` in `oracle.py` (`[B113:request_without_timeout]`), which can cause resource exhaustion or Denial of Service (DoS) if the remote server hangs.
+**Learning:** These vulnerabilities often exist because developers take shortcuts with paths (hardcoding `/tmp`) or forget to include timeouts when making external HTTP requests.
+**Prevention:** Always use safe `tempfile` generation (e.g., `os.path.join(tempfile.gettempdir(), ...)`) to respect environment variables and provide cross-platform compatibility. Always include a `timeout` parameter (e.g., `timeout=30`) for external network calls like `requests.get()`.
