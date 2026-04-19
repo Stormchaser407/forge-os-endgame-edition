@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 import sqlite3
+import re
 
 import requests
 import folium
@@ -96,6 +97,14 @@ class ATLASAgent(ObsidianAgent):
         self.border_crossings = []
         self.high_risk_areas = []
         
+        # Pre-compile regex patterns for performance
+        location_patterns = [
+            r'\b(?:at|in|near|from|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z]{2})\b',  # City, State
+            r'\b(\d+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:St|Ave|Rd|Blvd))\b'  # Street addresses
+        ]
+        self._location_regexes = [re.compile(p, re.IGNORECASE) for p in location_patterns]
+
     async def initialize_services(self, config: Dict[str, str]):
         """Initialize geolocation services"""
         self.logger.info("Initializing geolocation services...")
@@ -437,18 +446,9 @@ class ATLASAgent(ObsidianAgent):
         # This would use NLP libraries like spaCy for named entity recognition
         # Placeholder implementation with basic patterns
         
-        import re
-        
-        # Simple patterns for locations
-        location_patterns = [
-            r'\b(?:at|in|near|from|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
-            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z]{2})\b',  # City, State
-            r'\b(\d+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:St|Ave|Rd|Blvd))\b'  # Street addresses
-        ]
-        
         mentions = []
-        for pattern in location_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
+        for pattern in self._location_regexes:
+            matches = pattern.findall(text)
             mentions.extend([match if isinstance(match, str) else ' '.join(match) for match in matches])
         
         return list(set(mentions))[:5]  # Limit and deduplicate
