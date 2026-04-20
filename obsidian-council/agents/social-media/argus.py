@@ -114,6 +114,10 @@ class ARGUSAgent(ObsidianAgent):
         self._trafficking_regexes = [re.compile(p, re.IGNORECASE) for p in self.trafficking_indicators]
         self._distress_regexes = [re.compile(p, re.IGNORECASE) for p in self.distress_patterns]
 
+        # Pre-compile combined regex patterns for fast-path checking
+        self._fast_path_trafficking = re.compile('|'.join(f"(?:{p})" for p in self.trafficking_indicators), re.IGNORECASE)
+        self._fast_path_distress = re.compile('|'.join(f"(?:{p})" for p in self.distress_patterns), re.IGNORECASE)
+
         # Evidence collection
         self.screenshot_dir = "/tmp/argus-screenshots"
         
@@ -507,32 +511,43 @@ class ARGUSAgent(ObsidianAgent):
         
         for post in platform_results.get("posts", []):
             content = post.get("content", "")
+            if not content:
+                continue
+
+            # Fast-path: skip detailed checking if no patterns match
+            has_trafficking = self._fast_path_trafficking.search(content)
+            has_distress = self._fast_path_distress.search(content)
+
+            if not has_trafficking and not has_distress:
+                continue
             
-            # Check trafficking patterns
-            for i, pattern in enumerate(self._trafficking_regexes):
-                matches = pattern.findall(content)
-                if matches:
-                    indicators.append({
-                        "type": "trafficking_indicator",
-                        "pattern": self.trafficking_indicators[i],
-                        "matches": matches,
-                        "post": post,
-                        "severity": "HIGH",
-                        "requires_immediate_attention": True
-                    })
+            # Detailed check for trafficking patterns
+            if has_trafficking:
+                for i, pattern in enumerate(self._trafficking_regexes):
+                    matches = pattern.findall(content)
+                    if matches:
+                        indicators.append({
+                            "type": "trafficking_indicator",
+                            "pattern": self.trafficking_indicators[i],
+                            "matches": matches,
+                            "post": post,
+                            "severity": "HIGH",
+                            "requires_immediate_attention": True
+                        })
             
-            # Check distress patterns
-            for i, pattern in enumerate(self._distress_regexes):
-                matches = pattern.findall(content)
-                if matches:
-                    indicators.append({
-                        "type": "distress_indicator", 
-                        "pattern": self.distress_patterns[i],
-                        "matches": matches,
-                        "post": post,
-                        "severity": "CRITICAL",
-                        "requires_immediate_attention": True
-                    })
+            # Detailed check for distress patterns
+            if has_distress:
+                for i, pattern in enumerate(self._distress_regexes):
+                    matches = pattern.findall(content)
+                    if matches:
+                        indicators.append({
+                            "type": "distress_indicator",
+                            "pattern": self.distress_patterns[i],
+                            "matches": matches,
+                            "post": post,
+                            "severity": "CRITICAL",
+                            "requires_immediate_attention": True
+                        })
         
         return indicators
     
