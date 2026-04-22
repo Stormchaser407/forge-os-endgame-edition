@@ -26,6 +26,7 @@ from geopy.distance import geodesic
 import exifread
 from PIL import Image
 from PIL.ExifTags import TAGS
+import re
 import reverse_geocoder as rg
 import numpy as np
 from sklearn.cluster import DBSCAN
@@ -96,6 +97,17 @@ class ATLASAgent(ObsidianAgent):
         self.border_crossings = []
         self.high_risk_areas = []
         
+        # Location extraction patterns
+        self.location_patterns = [
+            r'\b(?:at|in|near|from|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z]{2})\b',  # City, State
+            r'\b(\d+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:St|Ave|Rd|Blvd))\b'  # Street addresses
+        ]
+
+        # Pre-compile regex patterns for performance
+        self._location_regexes = [re.compile(p, re.IGNORECASE) for p in self.location_patterns]
+        self._combined_location_regex = re.compile('|'.join(f'(?:{p})' for p in self.location_patterns), re.IGNORECASE)
+
     async def initialize_services(self, config: Dict[str, str]):
         """Initialize geolocation services"""
         self.logger.info("Initializing geolocation services...")
@@ -437,18 +449,14 @@ class ATLASAgent(ObsidianAgent):
         # This would use NLP libraries like spaCy for named entity recognition
         # Placeholder implementation with basic patterns
         
-        import re
-        
-        # Simple patterns for locations
-        location_patterns = [
-            r'\b(?:at|in|near|from|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
-            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z]{2})\b',  # City, State
-            r'\b(\d+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:St|Ave|Rd|Blvd))\b'  # Street addresses
-        ]
-        
+        # Fast-path: Skip detailed regex matching if the combined regex doesn't match
+        if not self._combined_location_regex.search(text):
+            return []
+
         mentions = []
-        for pattern in location_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
+        # Use pre-compiled regexes for performance
+        for pattern in self._location_regexes:
+            matches = pattern.findall(text)
             mentions.extend([match if isinstance(match, str) else ' '.join(match) for match in matches])
         
         return list(set(mentions))[:5]  # Limit and deduplicate
