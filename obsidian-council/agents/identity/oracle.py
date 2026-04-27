@@ -244,7 +244,8 @@ class ORACLEAgent(ObsidianAgent):
             # Load image
             if image_path.startswith('http'):
                 # Download image
-                response = requests.get(image_path)
+                # Added timeout to prevent DoS via hanging requests
+                response = requests.get(image_path, timeout=10)
                 image = Image.open(io.BytesIO(response.content))
             else:
                 image = Image.open(image_path)
