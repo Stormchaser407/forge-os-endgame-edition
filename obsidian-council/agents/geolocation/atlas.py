@@ -465,8 +465,8 @@ class ATLASAgent(ObsidianAgent):
             if location_name in self.location_cache:
                 return self.location_cache[location_name]
             
-            # Use geolocator
-            location = self.geolocator.geocode(location_name, timeout=10)
+            # Use geolocator offloaded to a thread to prevent blocking event loop
+            location = await asyncio.to_thread(self.geolocator.geocode, location_name, timeout=10)
             
             if location:
                 coords = {
@@ -540,8 +540,8 @@ class ATLASAgent(ObsidianAgent):
     async def _identify_area(self, lat: float, lng: float) -> str:
         """Identify what type of area this is (residential, commercial, etc.)"""
         try:
-            # Reverse geocode to get address info
-            results = rg.search((lat, lng))
+            # Reverse geocode to get address info, offloaded to thread to prevent blocking
+            results = await asyncio.to_thread(rg.search, (lat, lng))
             
             if results:
                 result = results[0]
