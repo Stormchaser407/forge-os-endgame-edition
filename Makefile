@@ -37,7 +37,7 @@ obsidian-council:
 # Create bootable ISO
 iso: docker-build obsidian-council
 	@echo "📀 Creating Forge OS Endgame Edition ISO..."
-	docker run --privileged \
+	docker run --cap-add=SYS_ADMIN --cap-add=MKNOD --cap-add=SYS_CHROOT \
 		--name forge-os-builder \
 		-v $(PWD)/scripts:/forge-os/scripts:ro \
 		-v $(PWD)/config:/forge-os/config:ro \
@@ -124,7 +124,7 @@ package: iso checksums sign
 # Development environment
 dev:
 	@echo "🔧 Starting development environment..."
-	docker run -it --privileged \
+	docker run -it --cap-add=SYS_ADMIN --cap-add=MKNOD --cap-add=SYS_CHROOT \
 		--name forge-os-dev \
 		-v $(PWD):/forge-os \
 		-w /forge-os \
