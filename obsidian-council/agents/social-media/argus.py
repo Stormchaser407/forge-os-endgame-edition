@@ -24,7 +24,7 @@ import instaloader
 import praw
 
 from ..core.agent_base import ObsidianAgent, Priority
-from ..core.ai_service_manager import QueryType, QueryContext, AGENT_PROMPTS
+from ..core.ai_service_manager import QueryType, QueryContext, AGENT_PROMPTS, AIServiceManager
 
 @dataclass
 class SocialMediaProfile:
@@ -113,6 +113,10 @@ class ARGUSAgent(ObsidianAgent):
         # Pre-compile regex patterns for performance
         self._trafficking_regexes = [re.compile(p, re.IGNORECASE) for p in self.trafficking_indicators]
         self._distress_regexes = [re.compile(p, re.IGNORECASE) for p in self.distress_patterns]
+
+        # Pre-compile combined regexes for fast-path search
+        self._fast_trafficking_regex = re.compile('|'.join(f'(?:{p})' for p in self.trafficking_indicators), re.IGNORECASE)
+        self._fast_distress_regex = re.compile('|'.join(f'(?:{p})' for p in self.distress_patterns), re.IGNORECASE)
 
         # Evidence collection
         self.screenshot_dir = "/tmp/argus-screenshots"
@@ -507,38 +511,43 @@ class ARGUSAgent(ObsidianAgent):
         
         for post in platform_results.get("posts", []):
             content = post.get("content", "")
+            if not content:
+                continue
+
+            # Use fast-path combined regex before iterating over individual patterns
+            if self._fast_trafficking_regex.search(content):
+                # Check trafficking patterns
+                for i, pattern in enumerate(self._trafficking_regexes):
+                    matches = pattern.findall(content)
+                    if matches:
+                        indicators.append({
+                            "type": "trafficking_indicator",
+                            "pattern": self.trafficking_indicators[i],
+                            "matches": matches,
+                            "post": post,
+                            "severity": "HIGH",
+                            "requires_immediate_attention": True
+                        })
             
-            # Check trafficking patterns
-            for i, pattern in enumerate(self._trafficking_regexes):
-                matches = pattern.findall(content)
-                if matches:
-                    indicators.append({
-                        "type": "trafficking_indicator",
-                        "pattern": self.trafficking_indicators[i],
-                        "matches": matches,
-                        "post": post,
-                        "severity": "HIGH",
-                        "requires_immediate_attention": True
-                    })
-            
-            # Check distress patterns
-            for i, pattern in enumerate(self._distress_regexes):
-                matches = pattern.findall(content)
-                if matches:
-                    indicators.append({
-                        "type": "distress_indicator", 
-                        "pattern": self.distress_patterns[i],
-                        "matches": matches,
-                        "post": post,
-                        "severity": "CRITICAL",
-                        "requires_immediate_attention": True
-                    })
+            # Use fast-path combined regex before iterating over individual patterns
+            if self._fast_distress_regex.search(content):
+                # Check distress patterns
+                for i, pattern in enumerate(self._distress_regexes):
+                    matches = pattern.findall(content)
+                    if matches:
+                        indicators.append({
+                            "type": "distress_indicator",
+                            "pattern": self.distress_patterns[i],
+                            "matches": matches,
+                            "post": post,
+                            "severity": "CRITICAL",
+                            "requires_immediate_attention": True
+                        })
         
         return indicators
     
     async def _ai_analyze_findings(self, results: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Use AI to analyze findings and provide insights"""
-        from ..core.ai_service_manager import AIServiceManager
         
         # Prepare data for AI analysis
         analysis_prompt = f"""
