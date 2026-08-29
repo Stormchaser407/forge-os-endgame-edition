@@ -114,6 +114,10 @@ class ARGUSAgent(ObsidianAgent):
         self._trafficking_regexes = [re.compile(p, re.IGNORECASE) for p in self.trafficking_indicators]
         self._distress_regexes = [re.compile(p, re.IGNORECASE) for p in self.distress_patterns]
 
+        # Pre-compile combined regexes for fast-path search
+        self._combined_trafficking_regex = re.compile(r'(?:' + r'|'.join(self.trafficking_indicators) + r')', re.IGNORECASE)
+        self._combined_distress_regex = re.compile(r'(?:' + r'|'.join(self.distress_patterns) + r')', re.IGNORECASE)
+
         # Evidence collection
         self.screenshot_dir = "/tmp/argus-screenshots"
         
@@ -454,6 +458,7 @@ class ARGUSAgent(ObsidianAgent):
         subject_name = subject_info.get("name", "").lower()
         subject_usernames = [u.lower() for u in subject_info.get("usernames", [])]
         subject_aliases = [a.lower() for a in subject_info.get("aliases", [])]
+        subject_locations = [loc.lower() for loc in subject_info.get("locations", [])]
         
         # Check user profiles
         for user in platform_results.get("users", []):
@@ -484,8 +489,8 @@ class ARGUSAgent(ObsidianAgent):
             # Location matching
             user_location = user.get("location", "").lower()
             if user_location:
-                for subject_location in subject_info.get("locations", []):
-                    if subject_location.lower() in user_location:
+                for subject_location in subject_locations:
+                    if subject_location in user_location:
                         match_score += 20
                         match_reasons.append(f"Location match: {subject_location}")
             
@@ -509,30 +514,32 @@ class ARGUSAgent(ObsidianAgent):
             content = post.get("content", "")
             
             # Check trafficking patterns
-            for i, pattern in enumerate(self._trafficking_regexes):
-                matches = pattern.findall(content)
-                if matches:
-                    indicators.append({
-                        "type": "trafficking_indicator",
-                        "pattern": self.trafficking_indicators[i],
-                        "matches": matches,
-                        "post": post,
-                        "severity": "HIGH",
-                        "requires_immediate_attention": True
-                    })
+            if self._combined_trafficking_regex.search(content):
+                for i, pattern in enumerate(self._trafficking_regexes):
+                    matches = pattern.findall(content)
+                    if matches:
+                        indicators.append({
+                            "type": "trafficking_indicator",
+                            "pattern": self.trafficking_indicators[i],
+                            "matches": matches,
+                            "post": post,
+                            "severity": "HIGH",
+                            "requires_immediate_attention": True
+                        })
             
             # Check distress patterns
-            for i, pattern in enumerate(self._distress_regexes):
-                matches = pattern.findall(content)
-                if matches:
-                    indicators.append({
-                        "type": "distress_indicator", 
-                        "pattern": self.distress_patterns[i],
-                        "matches": matches,
-                        "post": post,
-                        "severity": "CRITICAL",
-                        "requires_immediate_attention": True
-                    })
+            if self._combined_distress_regex.search(content):
+                for i, pattern in enumerate(self._distress_regexes):
+                    matches = pattern.findall(content)
+                    if matches:
+                        indicators.append({
+                            "type": "distress_indicator",
+                            "pattern": self.distress_patterns[i],
+                            "matches": matches,
+                            "post": post,
+                            "severity": "CRITICAL",
+                            "requires_immediate_attention": True
+                        })
         
         return indicators
     
