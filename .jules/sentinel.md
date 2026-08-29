@@ -1,0 +1,4 @@
+## 2024-05-15 - [Hardcoded Temporary Directories and Missing Request Timeouts]
+**Vulnerability:** Found hardcoded `/tmp/` usage in `atlas.py` and `argus.py` (which can lead to file overwrite or symlink attacks), and missing `timeout` parameter in `requests.get()` in `oracle.py` (which can lead to DoS).
+**Learning:** Hardcoding `/tmp/` or missing timeouts in external API calls are frequent medium-severity issues in rapid python script development.
+**Prevention:** Always use secure temporary file creation APIs like `tempfile.gettempdir()` alongside `os.path.join()`. Always append a `timeout` argument when making requests over the network.
