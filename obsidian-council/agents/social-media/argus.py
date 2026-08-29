@@ -14,6 +14,7 @@ import asyncio
 import json
 import re
 import hashlib
+import tempfile
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass
@@ -115,7 +116,7 @@ class ARGUSAgent(ObsidianAgent):
         self._distress_regexes = [re.compile(p, re.IGNORECASE) for p in self.distress_patterns]
 
         # Evidence collection
-        self.screenshot_dir = "/tmp/argus-screenshots"
+        self.screenshot_dir = tempfile.mkdtemp(prefix="argus-screenshots-")
         
     async def initialize_platforms(self, config: Dict[str, str]):
         """Initialize social media platform clients"""
