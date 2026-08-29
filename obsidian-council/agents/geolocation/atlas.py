@@ -14,6 +14,8 @@ Specializes in:
 import asyncio
 import json
 import math
+import os
+import tempfile
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
@@ -795,7 +797,7 @@ class ATLASAgent(ObsidianAgent):
                     ).add_to(m)
             
             # Save map
-            map_path = f"/tmp/atlas_map_{case_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+            map_path = os.path.join(tempfile.gettempdir(), f"atlas_map_{case_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
             m.save(map_path)
             
             self.logger.info(f"Location map created: {map_path}")
